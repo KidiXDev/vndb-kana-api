@@ -252,17 +252,13 @@ export interface ReleaseMedia {
   qty: number;
 }
 
-export interface ReleaseVn {
+export interface ReleaseVn extends VisualNovel {
   rtype: ReleaseType;
-  // All VN fields available
-  [key: string]: unknown;
 }
 
-export interface ReleaseProducer {
+export interface ReleaseProducer extends Producer {
   developer: boolean;
   publisher: boolean;
-  // All producer fields available
-  [key: string]: unknown;
 }
 
 export interface ReleaseImage extends VndbImage {
@@ -307,12 +303,10 @@ export interface Character {
   traits: CharacterTrait[];
 }
 
-export interface CharacterVn {
+export interface CharacterVn extends VisualNovel {
   spoiler: number;
   role: CharacterRole;
   release: Release | null;
-  // All VN fields available
-  [key: string]: unknown;
 }
 
 export interface CharacterTrait extends Trait {
@@ -372,14 +366,8 @@ export interface Quote {
   id: VndbId;
   quote: string;
   score: number;
-  vn: {
-    // All VN fields available
-    [key: string]: unknown;
-  };
-  character: {
-    // All character fields available
-    [key: string]: unknown;
-  };
+  vn: VisualNovel[] | null;
+  character: Character[] | null;
 }
 
 // User list interfaces
