@@ -17,6 +17,7 @@ A type-safe TypeScript wrapper for the [VNDB Kana API (v2)](https://api.vndb.org
 ## Installation
 
 ```bash
+# Not yet published
 npm install vndb-kana-api
 ```
 
