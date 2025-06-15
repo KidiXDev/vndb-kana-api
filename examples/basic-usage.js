@@ -64,6 +64,8 @@ async function basicExamples() {
       console.log(
         `— ${randomQuote.character.name} from ${randomQuote.vn.title}\n`
       );
+    } else if (randomQuote.vn) {
+      console.log(`— ${randomQuote.vn.title}\n`);
     } else {
       console.log("— Unknown source\n");
     }
