@@ -171,7 +171,7 @@ export interface VisualNovel {
   screenshots: VndbScreenshot[];
   relations: VnRelation[];
   tags: VnTag[];
-  developers: VnDeveloper[];
+  developers: Producer[];
   editions: VnEdition[];
   staff: VnStaff[];
   va: VnVoiceActor[];
@@ -182,24 +182,15 @@ export interface VndbScreenshot extends VndbImage {
   release: Release;
 }
 
-export interface VnRelation {
+export interface VnRelation extends VisualNovel {
   relation: string;
   relation_official: boolean;
-  // All VN fields can be included here
-  [key: string]: unknown;
 }
 
-export interface VnTag {
+export interface VnTag extends Tag {
   rating: number;
   spoiler: 0 | 1 | 2;
   lie: boolean;
-  // All tag fields can be included
-  [key: string]: unknown;
-}
-
-export interface VnDeveloper {
-  // All producer fields can be included
-  [key: string]: unknown;
 }
 
 export interface VnEdition {
@@ -209,24 +200,16 @@ export interface VnEdition {
   official: boolean;
 }
 
-export interface VnStaff {
+export interface VnStaff extends Staff {
   eid: number | null;
   role: string;
   note: string | null;
-  // All staff fields can be included
-  [key: string]: unknown;
 }
 
 export interface VnVoiceActor {
   note: string | null;
-  staff: {
-    // All staff fields
-    [key: string]: unknown;
-  };
-  character: {
-    // All character fields
-    [key: string]: unknown;
-  };
+  staff: Staff[] | null;
+  character: Character[] | null;
 }
 
 // Release interfaces
@@ -332,11 +315,9 @@ export interface CharacterVn {
   [key: string]: unknown;
 }
 
-export interface CharacterTrait {
+export interface CharacterTrait extends Trait {
   spoiler: 0 | 1 | 2;
   lie: boolean;
-  // All trait fields available
-  [key: string]: unknown;
 }
 
 // Staff interface
