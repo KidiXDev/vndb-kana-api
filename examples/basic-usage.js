@@ -26,12 +26,17 @@ async function basicExamples() {
 
   // 2. Get a specific visual novel
   console.log("2. Get Visual Novel (Fate/stay night):");
-  const vnData = await vndb.getVisualNovel("v11", fields.vnBasic);
+  const vnData = await vndb.getVisualNovel("v11", fields.vnFull);
   if (vnData) {
     console.log(`Title: ${vnData.title}`);
     console.log(`Rating: ${formatRating(vnData.rating)}`);
     console.log(`Released: ${formatReleaseDate(vnData.released)}`);
-    console.log(`Platforms: ${vnData.platforms.join(", ")}\n`);
+    console.log(`Platforms: ${vnData.platforms.join(", ")}`);
+    console.log("Developers:");
+    vnData.developers.forEach((dev) => {
+      console.log(`- ${dev.name}`);
+    });
+    console.log("\n");
   }
 
   // 3. Search for visual novels
