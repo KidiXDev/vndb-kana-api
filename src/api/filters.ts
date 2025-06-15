@@ -206,21 +206,23 @@ export const filters = {
  */
 export const fields = {
   // Visual Novel fields
-  vnBasic: "title,released,rating,platforms",
+  vnBasic: "title,released,rating,platforms,developers.name",
   vnDetailed:
-    "title,alttitle,released,rating,votecount,length_minutes,description,image{url,dims},platforms,languages",
+    "title,alttitle,released,rating,votecount,length_minutes,description,image{url,dims},platforms,languages,developers.name",
   vnFull:
-    "title,alttitle,titles{lang,title,latin,official},aliases,olang,devstatus,released,languages,platforms,image{id,url,dims,sexual,violence,thumbnail},length,length_minutes,length_votes,description,average,rating,votecount",
+    "title,alttitle,titles{lang,title,latin,official},aliases,olang,devstatus,released,languages,platforms,image{id,url,dims,sexual,violence,thumbnail},length,length_minutes,length_votes,description,average,rating,votecount,developers.name,tags{name,spoiler,category},screenshots{id,url,dims,sexual,violence,thumbnail},extlinks{url,label}",
 
   // Release fields
   releaseBasic: "title,released,platforms,languages{lang,title}",
   releaseDetailed:
-    "title,alttitle,released,platforms,languages{lang,title,latin,mtl},media{medium,qty},minage,patch,freeware,official,has_ero",
+    "title,alttitle,released,platforms,languages{lang,title,latin,mtl},media{medium,qty},minage,patch,freeware,official,has_ero,producers{name,id}",
 
   // Character fields
-  characterBasic: "name,image{url,dims}",
+  characterBasic: "id,name,image{url,dims}",
   characterDetailed:
-    "name,original,aliases,description,image{url,dims},age,birthday,sex,traits{spoiler}",
+    "id,name,original,aliases,description,image{url,dims,sexual,violence},age,birthday,sex,gender,traits{spoiler}",
+  characterFull:
+    "id,name,original,aliases,description,image{url,dims,sexual,violence},age,birthday,sex,blood_type,height,weight,bust,waist,hips,cup,gender,traits{spoiler,lie,sexual}",
 
   // Producer fields
   producerBasic: "name,type,lang",
