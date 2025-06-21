@@ -96,8 +96,8 @@ filters.ratingRange(80, 100);
 filters.dateRange("2020-01-01");
 
 // Tags and traits
-filters.tag("g596"); // Nakige tag
-filters.trait("i13"); // Ahoge trait
+filters.tag("g596");
+filters.trait("i13");
 
 // Boolean filters
 filters.hasDescription();
