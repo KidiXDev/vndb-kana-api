@@ -224,19 +224,6 @@ const characters = await vndb.getCharacters({
 });
 ```
 
----
-
-> **Development Status:** This wrapper is actively being developed. Report issues on GitHub if you encounter unexpected behavior.
-
-    filters.tag("g596"), // Nakige
-    filters.tag("g104") // Comedy
-
-),
-filters.ratingRange(75)
-);
-
-````
-
 ### Field Selection Presets
 
 ```typescript
@@ -266,7 +253,7 @@ fields.staffDetailed;
 // Tag/Trait fields
 fields.tagBasic;
 fields.traitBasic;
-````
+```
 
 ## User List Management
 
