@@ -174,7 +174,7 @@ export interface VisualNovel {
   developers: Producer[];
   editions: VnEdition[];
   staff: VnStaff[];
-  va: VnVoiceActor[];
+  va: VnVoiceActor[] | null;
   extlinks: ExternalLink[];
 }
 
@@ -208,8 +208,8 @@ export interface VnStaff extends Staff {
 
 export interface VnVoiceActor {
   note: string | null;
-  staff: Staff[] | null;
-  character: Character[] | null;
+  staff: Staff;
+  character: Character;
 }
 
 // Release interfaces

@@ -1,8 +1,5 @@
 # VNDB Kana API Wrapper
 
-> **⚠️ Under Development**  
-> This package is under active development. Some functions may be untested and could produce unexpected behavior. Use with caution in production environments.
-
 A type-safe TypeScript wrapper for the [VNDB Kana API (v2)](https://api.vndb.org/kana). Query the VNDB (Visual Novel Database) with full TypeScript support and built-in error handling.
 
 ## Features

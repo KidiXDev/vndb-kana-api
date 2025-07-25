@@ -210,7 +210,7 @@ export const fields = {
   vnDetailed:
     "title,alttitle,released,rating,votecount,length_minutes,description,image{url,dims},platforms,languages,developers.name",
   vnFull:
-    "title,alttitle,titles{lang,title,latin,official},aliases,olang,devstatus,released,languages,platforms,image{id,url,dims,sexual,violence,thumbnail},length,length_minutes,length_votes,description,average,rating,votecount,developers.name,tags{name,spoiler,category},screenshots{id,url,dims,sexual,violence,thumbnail},extlinks{url,label}",
+    "title,alttitle,titles{lang,title,latin,official},aliases,olang,devstatus,released,languages,platforms,image{id,url,dims,sexual,violence,thumbnail},length,length_minutes,length_votes,description,average,rating,votecount,developers.name,tags{name,spoiler,category},screenshots{id,url,dims,sexual,violence,thumbnail},extlinks{url,label},va{character.name,character.id,staff.name,staff.id}",
 
   // Release fields
   releaseBasic: "title,released,platforms,languages{lang,title}",
