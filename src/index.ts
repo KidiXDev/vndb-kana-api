@@ -58,6 +58,7 @@ export {
   debounce,
   throttle,
   RateLimiter,
+  selectFields,
 } from "./api/utils.js";
 
 // Export all types

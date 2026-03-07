@@ -337,3 +337,28 @@ export class RateLimiter {
     return this.windowMs - (Date.now() - oldestRequest);
   }
 }
+
+/**
+ * Build a comma-separated fields string from individual typed field names.
+ * Provides IntelliSense autocomplete for known field names of a resource type
+ * while still allowing custom sub-field selections such as `"image{url,dims}"`.
+ *
+ * @param fieldNames - One or more field names to include in the selection
+ * @returns Comma-separated fields string ready for use with API queries
+ *
+ * @example
+ * ```typescript
+ * import { selectFields, type VnField } from 'vndb-kana-api';
+ *
+ * // Type-safe: get autocomplete for VnField literals
+ * const f = selectFields<VnField>("id", "title", "rating", "released");
+ * // → "id,title,rating,released"
+ *
+ * // Custom sub-field selections still work:
+ * const f2 = selectFields<VnField>("id", "title", "image{url,dims}", "tags{name,spoiler}");
+ * // → "id,title,image{url,dims},tags{name,spoiler}"
+ * ```
+ */
+export function selectFields<T extends string>(...fieldNames: Array<T | (string & {})>): string {
+  return fieldNames.join(",");
+}

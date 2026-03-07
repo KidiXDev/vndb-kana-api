@@ -535,3 +535,47 @@ export interface UListUpdateData {
 export interface RListUpdateData {
   status?: 0 | 1 | 2 | 3 | 4;
 }
+
+// Field selection types for type-safe field picking per resource type.
+// Use these with selectFields() or as IntelliSense-guided strings.
+
+/** Valid top-level field names for Visual Novel queries */
+export type VnField = keyof VisualNovel;
+
+/** Valid top-level field names for Release queries */
+export type ReleaseField = keyof Release;
+
+/** Valid top-level field names for Character queries */
+export type CharacterField = keyof Character;
+
+/** Valid top-level field names for Producer queries */
+export type ProducerField = keyof Producer;
+
+/** Valid top-level field names for Staff queries */
+export type StaffField = keyof Staff;
+
+/** Valid top-level field names for Tag queries */
+export type TagField = keyof Tag;
+
+/** Valid top-level field names for Trait queries */
+export type TraitField = keyof Trait;
+
+/** Valid top-level field names for Quote queries */
+export type QuoteField = keyof Quote;
+
+/** Valid top-level field names for User List queries */
+export type UListField = keyof UserListEntry;
+
+/**
+ * A field selector type that provides IntelliSense autocomplete for known field
+ * names while still accepting any custom string for sub-field selections such as
+ * `"image{url,dims}"` or `"developers.name"`.
+ *
+ * @example
+ * ```typescript
+ * // Both of these are valid:
+ * const f1: FieldSelection<VnField> = "title";          // autocomplete ✓
+ * const f2: FieldSelection<VnField> = "image{url,dims}"; // custom string ✓
+ * ```
+ */
+export type FieldSelection<T extends string> = T | (string & {});

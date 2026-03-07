@@ -30,6 +30,15 @@ import type {
   Filter,
   SimpleFilter,
   AndFilter,
+  VnField,
+  ReleaseField,
+  CharacterField,
+  ProducerField,
+  StaffField,
+  TagField,
+  TraitField,
+  QuoteField,
+  FieldSelection,
 } from "../types/index.js";
 import {
   VndbApiError,
@@ -102,13 +111,13 @@ export class VndbClient {
     });
 
     // Add request interceptor to enforce rate limiting
-    this.http.interceptors.request.use(async (config) => {
+    this.http.interceptors.request.use(async (axiosConfig) => {
       if (!this.rateLimiter.canMakeRequest()) {
         const waitMs = this.rateLimiter.getTimeUntilNextRequest();
         await sleep(waitMs);
       }
       this.rateLimiter.recordRequest();
-      return config;
+      return axiosConfig;
     });
 
     // Add response interceptor for error handling
@@ -238,7 +247,7 @@ export class VndbClient {
    */
   async getVisualNovel(
     id: string,
-    fields?: string
+    fields?: FieldSelection<VnField>
   ): Promise<VisualNovel | null> {
     if (!isValidVndbId(id, "v")) {
       throw new VndbValidationError(`Invalid visual novel ID: "${id}". Expected format: v<number> (e.g. v17)`);
@@ -271,7 +280,7 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns Release data
    */
-  async getRelease(id: string, fields?: string): Promise<Release | null> {
+  async getRelease(id: string, fields?: FieldSelection<ReleaseField>): Promise<Release | null> {
     if (!isValidVndbId(id, "r")) {
       throw new VndbValidationError(`Invalid release ID: "${id}". Expected format: r<number> (e.g. r123)`);
     }
@@ -303,7 +312,7 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns Producer data
    */
-  async getProducer(id: string, fields?: string): Promise<Producer | null> {
+  async getProducer(id: string, fields?: FieldSelection<ProducerField>): Promise<Producer | null> {
     if (!isValidVndbId(id, "p")) {
       throw new VndbValidationError(`Invalid producer ID: "${id}". Expected format: p<number> (e.g. p123)`);
     }
@@ -335,7 +344,7 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns Character data
    */
-  async getCharacter(id: string, fields?: string): Promise<Character | null> {
+  async getCharacter(id: string, fields?: FieldSelection<CharacterField>): Promise<Character | null> {
     if (!isValidVndbId(id, "c")) {
       throw new VndbValidationError(`Invalid character ID: "${id}". Expected format: c<number> (e.g. c456)`);
     }
@@ -364,7 +373,7 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns Staff data
    */
-  async getStaffMember(id: string, fields?: string): Promise<Staff | null> {
+  async getStaffMember(id: string, fields?: FieldSelection<StaffField>): Promise<Staff | null> {
     if (!isValidVndbId(id, "s")) {
       throw new VndbValidationError(`Invalid staff ID: "${id}". Expected format: s<number> (e.g. s123)`);
     }
@@ -393,7 +402,7 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns Tag data
    */
-  async getTag(id: string, fields?: string): Promise<Tag | null> {
+  async getTag(id: string, fields?: FieldSelection<TagField>): Promise<Tag | null> {
     if (!isValidVndbId(id, "g")) {
       throw new VndbValidationError(`Invalid tag ID: "${id}". Expected format: g<number> (e.g. g123)`);
     }
@@ -422,7 +431,7 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns Trait data
    */
-  async getTrait(id: string, fields?: string): Promise<Trait | null> {
+  async getTrait(id: string, fields?: FieldSelection<TraitField>): Promise<Trait | null> {
     if (!isValidVndbId(id, "i")) {
       throw new VndbValidationError(`Invalid trait ID: "${id}". Expected format: i<number> (e.g. i123)`);
     }
@@ -450,7 +459,7 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns A quote entry (sorted by id; not truly random due to API constraints)
    */
-  async getRandomQuote(fields?: string): Promise<Quote | null> {
+  async getRandomQuote(fields?: FieldSelection<QuoteField>): Promise<Quote | null> {
     const result = await this.getQuotes({
       sort: "id",
       fields: fields || "vn{id,title},character{id,name},quote",
@@ -530,7 +539,7 @@ export class VndbClient {
    */
   async searchVisualNovels(
     title: string,
-    fields?: string,
+    fields?: FieldSelection<VnField>,
     limit: number = 25
   ): Promise<VisualNovel[]> {
     const result = await this.getVisualNovels({
@@ -548,7 +557,7 @@ export class VndbClient {
    * @returns Visual novels
    */ async getVisualNovelsByIds(
     ids: string[],
-    fields?: string
+    fields?: FieldSelection<VnField>
   ): Promise<VisualNovel[]> {
     if (ids.length === 0) return [];
 
