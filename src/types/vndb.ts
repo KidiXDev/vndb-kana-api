@@ -579,3 +579,29 @@ export type UListField = keyof UserListEntry;
  * ```
  */
 export type FieldSelection<T extends string> = T | (string & {});
+
+/**
+ * Unwraps the element type of an array, or strips null/undefined from a plain type.
+ * Handles `T[]`, `T[] | null`, and `T | null` uniformly so that sub-field key
+ * extraction works correctly regardless of whether a resource field is an array,
+ * a nullable object, or a nullable array.
+ */
+export type Unwrap<T> = NonNullable<T> extends Array<infer U> ? U : NonNullable<T>;
+
+/**
+ * Returns the valid sub-field key names for a given field `K` of resource type `TObj`.
+ * Handles array fields (e.g., `tags: VnTag[]`) and nullable object fields
+ * (e.g., `image: VndbImage | null`) automatically.
+ *
+ * Intended for use with {@link selectSubFields} to get type-safe sub-field selection.
+ *
+ * @example
+ * ```typescript
+ * // "id" | "url" | "dims" | "sexual" | "violence" | "votecount" | "thumbnail" | "thumbnail_dims"
+ * type ImageSubFields = SubFieldsOf<VisualNovel, "image">;
+ *
+ * // All keys of VnTag (id, name, rating, spoiler, lie, ...)
+ * type TagSubFields = SubFieldsOf<VisualNovel, "tags">;
+ * ```
+ */
+export type SubFieldsOf<TObj, K extends keyof TObj> = keyof Unwrap<TObj[K]> & string;
