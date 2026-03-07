@@ -63,7 +63,8 @@ import { RateLimiter, isValidVndbId, chunk } from "./utils.js";
  */
 export class VndbClient {
   private readonly http: AxiosInstance;
-  private config: Required<VndbClientConfig>;
+  private readonly config: Required<VndbClientConfig>;
+  private token: string;
   private rateLimiter: RateLimiter;
 
   /**
@@ -71,6 +72,7 @@ export class VndbClient {
    * @param config - Client configuration options
    */
   constructor(config: VndbClientConfig = {}) {
+    this.token = config.token ?? "";
     this.config = {
       baseURL: config.baseURL ?? "https://api.vndb.org/kana",
       token: config.token ?? "",
@@ -93,8 +95,8 @@ export class VndbClient {
       headers: {
         "User-Agent": this.config.userAgent,
         "Content-Type": "application/json",
-        ...(this.config.token && {
-          Authorization: `Token ${this.config.token}`,
+        ...(this.token && {
+          Authorization: `Token ${this.token}`,
         }),
       },
     });
@@ -130,7 +132,7 @@ export class VndbClient {
    * @param token - New API token
    */
   setToken(token: string): void {
-    this.config.token = token;
+    this.token = token;
     this.http.defaults.headers.Authorization = `Token ${token}`;
   }
 
@@ -138,7 +140,7 @@ export class VndbClient {
    * Remove the authentication token
    */
   clearToken(): void {
-    this.config.token = "";
+    this.token = "";
     delete this.http.defaults.headers.Authorization;
   }
 
@@ -444,9 +446,9 @@ export class VndbClient {
     return response.data;
   }
   /**
-   * Get a random quote
+   * Get a quote from the database
    * @param fields - Fields to select
-   * @returns Random quote
+   * @returns A quote entry (sorted by id; not truly random due to API constraints)
    */
   async getRandomQuote(fields?: string): Promise<Quote | null> {
     const result = await this.getQuotes({
