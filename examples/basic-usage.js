@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Basic usage examples for the VNDB Kana API
  */
@@ -9,7 +10,7 @@ import {
   formatRating,
   formatReleaseDate,
   and,
-} from "../dist/index.js";
+} from "vndb-kana-api";
 
 async function basicExamples() {
   // Create a client (no authentication needed for read-only operations)
@@ -43,26 +44,62 @@ async function basicExamples() {
   console.log('3. Search Results for "clannad":');
   const searchResults = await vndb.searchVisualNovels(
     "clannad",
-    "title,rating,released",
-    5
+    ["title", "rating", "released", "image.url", "titles.official"],
+    5,
   );
   searchResults.forEach((vn, index) => {
     console.log(
       `${index + 1}. ${vn.title} (${formatRating(
-        vn.rating
-      )}) - ${formatReleaseDate(vn.released)}`
+        vn.rating,
+      )}) - ${formatReleaseDate(vn.released)}`,
     );
   });
   console.log();
 
-  // 4. Get a random quote
-  console.log("4. Random Quote:");
+  // 4. Get Character information
+  console.log("4. Fetch Character");
+  const char = await vndb.getCharacter("c77134", fields.characterFull);
+  if (char) {
+    console.log(`Name: ${char.name}`);
+    console.log(`Gender: ${char.gender}`);
+    console.log(`Blood Type: ${char.blood_type}`);
+    console.log(`Birthday: ${char.birthday}`);
+    console.log(`Aliases: ${char.aliases?.join(", ")}`);
+    console.log(`VNs: ${char.vns?.map((vn) => vn.title).join(", ")}`);
+  }
+  console.log();
+
+  // 5. Get Character Voice Actor
+  console.log("5. Fetch Character VA:");
+  const charVa = await vndb.getCharacterVoiceActors("c77134", "v24351");
+  charVa.forEach((va) => {
+    console.log(`VA: ${va.name}${va.note ? ` (${va.note})` : ""}`);
+  });
+  console.log();
+
+  // 6. Get All Character VA From VN
+  console.log("6. Fetch All Character VA from VN");
+  const allCharVa = await vndb.getAllCharacterVoiceActors("v24351");
+  allCharVa.slice(0, 5).forEach((va, index) => {
+    console.log(
+      `${index + 1}. Character: ${va.character_id} -> VA: ${va.name}${
+        va.note ? ` (${va.note})` : ""
+      }`,
+    );
+  });
+  if (allCharVa.length > 5) {
+    console.log(`... and ${allCharVa.length - 5} more characters`);
+  }
+  console.log();
+
+  // 7. Get a random quote
+  console.log("7. Random Quote:");
   const randomQuote = await vndb.getRandomQuote();
   if (randomQuote) {
     console.log(`"${randomQuote.quote}"`);
     if (randomQuote.character && randomQuote.vn) {
       console.log(
-        `— ${randomQuote.character.name} from ${randomQuote.vn.title}\n`
+        `— ${randomQuote.character.name} from ${randomQuote.vn.title}\n`,
       );
     } else if (randomQuote.vn) {
       console.log(`— ${randomQuote.vn.title}\n`);
@@ -99,7 +136,7 @@ async function advancedQueries() {
     filters: and(
       filters.language("en"),
       filters.ratingRange(85),
-      filters.dateRange("2020-01-01")
+      filters.dateRange("2020-01-01"),
     ),
     fields: "title,rating,released,languages",
     sort: "rating",
@@ -130,7 +167,7 @@ async function advancedQueries() {
   const recentReleases = await vndb.getReleases({
     filters: and(
       filters.dateRange("2023-01-01", "2024-12-31"),
-      filters.official()
+      filters.official(),
     ),
     fields: "title,released,platforms,vns.title",
     sort: "released",
@@ -140,7 +177,7 @@ async function advancedQueries() {
 
   recentReleases.results.forEach((release, index) => {
     console.log(
-      `${index + 1}. ${release.title} - ${formatReleaseDate(release.released)}`
+      `${index + 1}. ${release.title} - ${formatReleaseDate(release.released)}`,
     );
     console.log(`   Platforms: ${release.platforms.join(", ")}`);
   });
@@ -168,14 +205,14 @@ async function filterExamples() {
   console.log("=== Filter Examples ===\n");
   // Complex filter combinations
   console.log(
-    "1. Complex Filter - English Nakige from 2000s with high rating:"
+    "1. Complex Filter - English Nakige from 2000s with high rating:",
   );
   const complexQuery = await vndb.getVisualNovels({
     filters: and(
       filters.language("en"),
       filters.tag("g596"), // Nakige
       filters.dateRange("2000-01-01", "2009-12-31"),
-      filters.ratingRange(80)
+      filters.ratingRange(80),
     ),
     fields: "title,rating,released,tags{name}",
     sort: "rating",
@@ -187,8 +224,8 @@ async function filterExamples() {
     console.log(`${index + 1}. ${vn.title}`);
     console.log(
       `   Rating: ${formatRating(vn.rating)}, Released: ${formatReleaseDate(
-        vn.released
-      )}`
+        vn.released,
+      )}`,
     );
   });
   console.log();
@@ -214,7 +251,7 @@ async function paginationExample() {
   console.log("=== Pagination Example ===\n");
 
   console.log(
-    "Getting all English visual novels with rating >= 90 (demonstrating pagination):"
+    "Getting all English visual novels with rating >= 90 (demonstrating pagination):",
   );
 
   const allHighRatedVNs = await vndb.getAllResults(
@@ -227,11 +264,11 @@ async function paginationExample() {
         page,
         results: 25,
       }),
-    5 // Max 5 pages for demo
+    5, // Max 5 pages for demo
   );
 
   console.log(
-    `Found ${allHighRatedVNs.length} highly-rated English visual novels:`
+    `Found ${allHighRatedVNs.length} highly-rated English visual novels:`,
   );
   allHighRatedVNs.slice(0, 10).forEach((vn, index) => {
     console.log(`${index + 1}. ${vn.title} (${formatRating(vn.rating)})`);

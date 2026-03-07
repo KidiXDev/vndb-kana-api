@@ -21,7 +21,7 @@ import { VndbValidationError } from "./errors.js";
 export function filter(
   field: string,
   operator: "=" | "!=" | ">" | ">=" | "<" | "<=",
-  value: FilterValue
+  value: FilterValue,
 ): SimpleFilter {
   return [field, operator, value];
 }
@@ -107,7 +107,7 @@ export function byPlatform(platforms: string | string[]): Filter {
 export function byDateRange(after?: string, before?: string): Filter {
   if (!after && !before) {
     throw new VndbValidationError(
-      "byDateRange requires at least one date bound (after or before)"
+      "byDateRange requires at least one date bound (after or before)",
     );
   }
   const filters: Filter[] = [];
@@ -147,7 +147,7 @@ export function byRatingRange(min?: number, max?: number): Filter {
 export function byTag(
   tagId: string,
   maxSpoiler?: number,
-  minLevel?: number
+  minLevel?: number,
 ): SimpleFilter {
   if (maxSpoiler !== undefined || minLevel !== undefined) {
     return filter("tag", "=", [tagId, maxSpoiler ?? 0, minLevel ?? 0]);
@@ -228,7 +228,7 @@ export const fields = {
   characterDetailed:
     "id,name,original,aliases,description,image{url,dims,sexual,violence},age,birthday,sex,gender,traits{spoiler}",
   characterFull:
-    "id,name,original,aliases,description,image{url,dims,sexual,violence},age,birthday,sex,blood_type,height,weight,bust,waist,hips,cup,gender,traits{spoiler,lie,sexual}",
+    "id,name,original,aliases,description,image{url,dims,sexual,violence},age,birthday,sex,blood_type,height,weight,bust,waist,hips,cup,gender,traits{spoiler,lie,sexual},vns{id,title,role,spoiler}",
 
   // Producer fields
   producerBasic: "name,type,lang",

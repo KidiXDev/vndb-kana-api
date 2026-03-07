@@ -4,7 +4,7 @@ import {
   fields,
   formatRating,
   SimpleFilter,
-} from "../src/index";
+} from "vndb-kana-api";
 
 describe("VndbClient", () => {
   let client: VndbClient;
@@ -37,7 +37,7 @@ describe("VndbClient", () => {
       const results = await client.searchVisualNovels(
         "clannad",
         fields.vnBasic,
-        5
+        5,
       );
 
       expect(Array.isArray(results)).toBe(true);
@@ -108,7 +108,7 @@ describe("VndbClient", () => {
         client.getVisualNovels({
           filters: ["id", "=", "invalid"] as SimpleFilter,
           results: 1,
-        })
+        }),
       ).rejects.toThrow();
     });
   });
@@ -160,7 +160,11 @@ describe("Integration Tests", () => {
 
   test("should fetch real data from VNDB", async () => {
     // Test with a well-known VN (Fate/stay night)
-    const vn = await client.getVisualNovel("v11", "title,rating,released");
+    const vn = await client.getVisualNovel("v11", [
+      "title",
+      "rating",
+      "released",
+    ]);
 
     expect(vn).toBeDefined();
     expect(vn?.title).toBeDefined();

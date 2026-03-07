@@ -285,7 +285,7 @@ export interface Character {
   id: VndbId;
   name: string;
   original: string | null;
-  aliases: string[];
+  aliases: string[] | null;
   description: string | null;
   image: VndbImage | null;
   blood_type: BloodType | null;
@@ -300,7 +300,7 @@ export interface Character {
   sex: [Gender | null, Gender | null] | null;
   gender: [Gender | null, Gender | null] | null;
   vns: CharacterVn[];
-  traits: CharacterTrait[];
+  traits: CharacterTrait[] | null;
 }
 
 export interface CharacterVn extends VisualNovel {
@@ -366,8 +366,8 @@ export interface Quote {
   id: VndbId;
   quote: string;
   score: number;
-  vn: VisualNovel[] | null;
-  character: Character[] | null;
+  vn: VisualNovel | null;
+  character: Character | null;
 }
 
 // User list interfaces
@@ -420,9 +420,9 @@ export type OrFilter = ["or", ...Filter[]];
 export type Filter = SimpleFilter | AndFilter | OrFilter;
 
 // Query interface
-export interface ApiQuery {
+export interface ApiQuery<T = unknown> {
   filters?: Filter | Filter[] | string;
-  fields?: string;
+  fields?: FieldSelection<T>;
   sort?: string;
   reverse?: boolean;
   results?: number;
@@ -567,18 +567,33 @@ export type QuoteField = keyof Quote;
 export type UListField = keyof UserListEntry;
 
 /**
- * A field selector type that provides IntelliSense autocomplete for known field
- * names while still accepting any custom string for sub-field selections such as
- * `"image{url,dims}"` or `"developers.name"`.
- *
- * @example
- * ```typescript
- * // Both of these are valid:
- * const f1: FieldSelection<VnField> = "title";          // autocomplete ✓
- * const f2: FieldSelection<VnField> = "image{url,dims}"; // custom string ✓
- * ```
+ * A type that provides autocomplete for:
+ * 1. Top-level fields: "id", "title"
+ * 2. Nested fields via dot: "image.url"
+ * 3. Multiple fields via array: ["id", "title", "image.url"] (Recommended for best autocomplete)
  */
-export type FieldSelection<T extends string> = T | (string & {});
+export type FieldSelection<TObj> =
+  | FieldPath<TObj>
+  | FieldPath<TObj>[]
+  | (string & {});
+
+/**
+ * Returns all valid field paths for a resource type T, including nested fields.
+ * e.g. "title" | "image.url" | "image.dims" | "tags.name"
+ * Recursive depth is limited to 3 levels to prevent circularity issues.
+ */
+export type FieldPath<
+  T,
+  Depth extends unknown[] = [],
+> = Depth["length"] extends 3
+  ? string
+  : T extends object
+    ? {
+        [K in keyof T & string]: T[K] extends object
+          ? K | `${K}.${FieldPath<Unwrap<T[K]>, [unknown, ...Depth]>}`
+          : K;
+      }[keyof T & string]
+    : string;
 
 /**
  * Unwraps the element type of an array, or strips null/undefined from a plain type.
@@ -586,7 +601,8 @@ export type FieldSelection<T extends string> = T | (string & {});
  * extraction works correctly regardless of whether a resource field is an array,
  * a nullable object, or a nullable array.
  */
-export type Unwrap<T> = NonNullable<T> extends Array<infer U> ? U : NonNullable<T>;
+export type Unwrap<T> =
+  NonNullable<T> extends Array<infer U> ? U : NonNullable<T>;
 
 /**
  * Returns the valid sub-field key names for a given field `K` of resource type `TObj`.
@@ -604,4 +620,5 @@ export type Unwrap<T> = NonNullable<T> extends Array<infer U> ? U : NonNullable<
  * type TagSubFields = SubFieldsOf<VisualNovel, "tags">;
  * ```
  */
-export type SubFieldsOf<TObj, K extends keyof TObj> = keyof Unwrap<TObj[K]> & string;
+export type SubFieldsOf<TObj, K extends keyof TObj> = keyof Unwrap<TObj[K]> &
+  string;

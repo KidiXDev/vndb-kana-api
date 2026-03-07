@@ -30,14 +30,6 @@ import type {
   Filter,
   SimpleFilter,
   AndFilter,
-  VnField,
-  ReleaseField,
-  CharacterField,
-  ProducerField,
-  StaffField,
-  TagField,
-  TraitField,
-  QuoteField,
   FieldSelection,
 } from "../types/index.js";
 import {
@@ -95,7 +87,7 @@ export class VndbClient {
 
     this.rateLimiter = new RateLimiter(
       this.config.rateLimit.requests ?? 200,
-      this.config.rateLimit.window ?? 300000
+      this.config.rateLimit.window ?? 300000,
     );
 
     this.http = axios.create({
@@ -130,10 +122,23 @@ export class VndbClient {
         throw new VndbApiError(
           error.response?.data?.message ?? error.message ?? "Unknown API error",
           status,
-          error.response?.data
+          error.response?.data,
         );
-      }
+      },
     );
+  }
+
+  /**
+   * Normalize query parameters for the API
+   * @param query - Raw query parameters
+   * @returns Normalized query parameters
+   */
+  private prepareQuery<T extends ApiQuery>(query: T): T {
+    const prepared = { ...query };
+    if (Array.isArray(prepared.fields)) {
+      prepared.fields = prepared.fields.join(",");
+    }
+    return prepared;
   }
 
   /**
@@ -180,7 +185,7 @@ export class VndbClient {
    */
   async getUsers(
     queries: string[],
-    fields?: string[]
+    fields?: string[],
   ): Promise<UserLookupResponse> {
     const params = new URLSearchParams();
     queries.forEach((q) => params.append("q", q));
@@ -189,7 +194,7 @@ export class VndbClient {
     }
 
     const response = await this.http.get<UserLookupResponse>(
-      `/user?${params.toString()}`
+      `/user?${params.toString()}`,
     );
     return response.data;
   }
@@ -211,14 +216,14 @@ export class VndbClient {
    */
   async getUserLabels(
     userId?: string,
-    fields?: string[]
+    fields?: string[],
   ): Promise<UserListLabelsResponse> {
     const params = new URLSearchParams();
     if (userId) params.append("user", userId);
     if (fields?.length) params.append("fields", fields.join(","));
 
     const response = await this.http.get<UserListLabelsResponse>(
-      `/ulist_labels?${params.toString()}`
+      `/ulist_labels?${params.toString()}`,
     );
     return response.data;
   }
@@ -231,11 +236,11 @@ export class VndbClient {
    * @returns Visual novel search results
    */
   async getVisualNovels(
-    query: ApiQuery & { sort?: VnSortField } = {}
+    query: ApiQuery<VisualNovel> & { sort?: VnSortField } = {},
   ): Promise<ApiResponse<VisualNovel>> {
     const response = await this.http.post<ApiResponse<VisualNovel>>(
       "/vn",
-      query
+      this.prepareQuery(query),
     );
     return response.data;
   }
@@ -247,10 +252,12 @@ export class VndbClient {
    */
   async getVisualNovel(
     id: string,
-    fields?: FieldSelection<VnField>
+    fields?: FieldSelection<VisualNovel>,
   ): Promise<VisualNovel | null> {
     if (!isValidVndbId(id, "v")) {
-      throw new VndbValidationError(`Invalid visual novel ID: "${id}". Expected format: v<number> (e.g. v17)`);
+      throw new VndbValidationError(
+        `Invalid visual novel ID: "${id}". Expected format: v<number> (e.g. v17)`,
+      );
     }
     const result = await this.getVisualNovels({
       filters: ["id", "=", id] as SimpleFilter,
@@ -266,11 +273,11 @@ export class VndbClient {
    * @returns Release search results
    */
   async getReleases(
-    query: ApiQuery & { sort?: ReleaseSortField } = {}
+    query: ApiQuery<Release> & { sort?: ReleaseSortField } = {},
   ): Promise<ApiResponse<Release>> {
     const response = await this.http.post<ApiResponse<Release>>(
       "/release",
-      query
+      this.prepareQuery(query),
     );
     return response.data;
   }
@@ -280,9 +287,14 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns Release data
    */
-  async getRelease(id: string, fields?: FieldSelection<ReleaseField>): Promise<Release | null> {
+  async getRelease(
+    id: string,
+    fields?: FieldSelection<Release>,
+  ): Promise<Release | null> {
     if (!isValidVndbId(id, "r")) {
-      throw new VndbValidationError(`Invalid release ID: "${id}". Expected format: r<number> (e.g. r123)`);
+      throw new VndbValidationError(
+        `Invalid release ID: "${id}". Expected format: r<number> (e.g. r123)`,
+      );
     }
     const result = await this.getReleases({
       filters: ["id", "=", id] as SimpleFilter,
@@ -298,11 +310,11 @@ export class VndbClient {
    * @returns Producer search results
    */
   async getProducers(
-    query: ApiQuery & { sort?: ProducerSortField } = {}
+    query: ApiQuery<Producer> & { sort?: ProducerSortField } = {},
   ): Promise<ApiResponse<Producer>> {
     const response = await this.http.post<ApiResponse<Producer>>(
       "/producer",
-      query
+      this.prepareQuery(query),
     );
     return response.data;
   }
@@ -312,9 +324,14 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns Producer data
    */
-  async getProducer(id: string, fields?: FieldSelection<ProducerField>): Promise<Producer | null> {
+  async getProducer(
+    id: string,
+    fields?: FieldSelection<Producer>,
+  ): Promise<Producer | null> {
     if (!isValidVndbId(id, "p")) {
-      throw new VndbValidationError(`Invalid producer ID: "${id}". Expected format: p<number> (e.g. p123)`);
+      throw new VndbValidationError(
+        `Invalid producer ID: "${id}". Expected format: p<number> (e.g. p123)`,
+      );
     }
     const result = await this.getProducers({
       filters: ["id", "=", id] as SimpleFilter,
@@ -330,11 +347,11 @@ export class VndbClient {
    * @returns Character search results
    */
   async getCharacters(
-    query: ApiQuery & { sort?: CharacterSortField } = {}
+    query: ApiQuery<Character> & { sort?: CharacterSortField } = {},
   ): Promise<ApiResponse<Character>> {
     const response = await this.http.post<ApiResponse<Character>>(
       "/character",
-      query
+      this.prepareQuery(query),
     );
     return response.data;
   }
@@ -344,9 +361,14 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns Character data
    */
-  async getCharacter(id: string, fields?: FieldSelection<CharacterField>): Promise<Character | null> {
+  async getCharacter(
+    id: string,
+    fields?: FieldSelection<Character>,
+  ): Promise<Character | null> {
     if (!isValidVndbId(id, "c")) {
-      throw new VndbValidationError(`Invalid character ID: "${id}". Expected format: c<number> (e.g. c456)`);
+      throw new VndbValidationError(
+        `Invalid character ID: "${id}". Expected format: c<number> (e.g. c456)`,
+      );
     }
     const result = await this.getCharacters({
       filters: ["id", "=", id] as SimpleFilter,
@@ -362,9 +384,12 @@ export class VndbClient {
    * @returns Staff search results
    */
   async getStaff(
-    query: ApiQuery & { sort?: StaffSortField } = {}
+    query: ApiQuery<Staff> & { sort?: StaffSortField } = {},
   ): Promise<ApiResponse<Staff>> {
-    const response = await this.http.post<ApiResponse<Staff>>("/staff", query);
+    const response = await this.http.post<ApiResponse<Staff>>(
+      "/staff",
+      this.prepareQuery(query),
+    );
     return response.data;
   }
   /**
@@ -373,9 +398,14 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns Staff data
    */
-  async getStaffMember(id: string, fields?: FieldSelection<StaffField>): Promise<Staff | null> {
+  async getStaffMember(
+    id: string,
+    fields?: FieldSelection<Staff>,
+  ): Promise<Staff | null> {
     if (!isValidVndbId(id, "s")) {
-      throw new VndbValidationError(`Invalid staff ID: "${id}". Expected format: s<number> (e.g. s123)`);
+      throw new VndbValidationError(
+        `Invalid staff ID: "${id}". Expected format: s<number> (e.g. s123)`,
+      );
     }
     const result = await this.getStaff({
       filters: ["and", ["ismain", "=", 1], ["id", "=", id]] as AndFilter,
@@ -391,9 +421,12 @@ export class VndbClient {
    * @returns Tag search results
    */
   async getTags(
-    query: ApiQuery & { sort?: TagSortField } = {}
+    query: ApiQuery<Tag> & { sort?: TagSortField } = {},
   ): Promise<ApiResponse<Tag>> {
-    const response = await this.http.post<ApiResponse<Tag>>("/tag", query);
+    const response = await this.http.post<ApiResponse<Tag>>(
+      "/tag",
+      this.prepareQuery(query),
+    );
     return response.data;
   }
   /**
@@ -402,9 +435,11 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns Tag data
    */
-  async getTag(id: string, fields?: FieldSelection<TagField>): Promise<Tag | null> {
+  async getTag(id: string, fields?: FieldSelection<Tag>): Promise<Tag | null> {
     if (!isValidVndbId(id, "g")) {
-      throw new VndbValidationError(`Invalid tag ID: "${id}". Expected format: g<number> (e.g. g123)`);
+      throw new VndbValidationError(
+        `Invalid tag ID: "${id}". Expected format: g<number> (e.g. g123)`,
+      );
     }
     const result = await this.getTags({
       filters: ["id", "=", id] as SimpleFilter,
@@ -420,9 +455,12 @@ export class VndbClient {
    * @returns Trait search results
    */
   async getTraits(
-    query: ApiQuery & { sort?: TraitSortField } = {}
+    query: ApiQuery<Trait> & { sort?: TraitSortField } = {},
   ): Promise<ApiResponse<Trait>> {
-    const response = await this.http.post<ApiResponse<Trait>>("/trait", query);
+    const response = await this.http.post<ApiResponse<Trait>>(
+      "/trait",
+      this.prepareQuery(query),
+    );
     return response.data;
   }
   /**
@@ -431,9 +469,14 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns Trait data
    */
-  async getTrait(id: string, fields?: FieldSelection<TraitField>): Promise<Trait | null> {
+  async getTrait(
+    id: string,
+    fields?: FieldSelection<Trait>,
+  ): Promise<Trait | null> {
     if (!isValidVndbId(id, "i")) {
-      throw new VndbValidationError(`Invalid trait ID: "${id}". Expected format: i<number> (e.g. i123)`);
+      throw new VndbValidationError(
+        `Invalid trait ID: "${id}". Expected format: i<number> (e.g. i123)`,
+      );
     }
     const result = await this.getTraits({
       filters: ["id", "=", id] as SimpleFilter,
@@ -449,9 +492,12 @@ export class VndbClient {
    * @returns Quote search results
    */
   async getQuotes(
-    query: ApiQuery & { sort?: QuoteSortField } = {}
+    query: ApiQuery<Quote> & { sort?: QuoteSortField } = {},
   ): Promise<ApiResponse<Quote>> {
-    const response = await this.http.post<ApiResponse<Quote>>("/quote", query);
+    const response = await this.http.post<ApiResponse<Quote>>(
+      "/quote",
+      this.prepareQuery(query),
+    );
     return response.data;
   }
   /**
@@ -459,7 +505,7 @@ export class VndbClient {
    * @param fields - Fields to select
    * @returns A quote entry (sorted by id; not truly random due to API constraints)
    */
-  async getRandomQuote(fields?: FieldSelection<QuoteField>): Promise<Quote | null> {
+  async getRandomQuote(fields?: FieldSelection<Quote>): Promise<Quote | null> {
     const result = await this.getQuotes({
       sort: "id",
       fields: fields || "vn{id,title},character{id,name},quote",
@@ -476,11 +522,11 @@ export class VndbClient {
    * @returns User list entries
    */
   async getUserList(
-    query: ApiQuery & { sort?: UListSortField; user: string }
+    query: ApiQuery<UserListEntry> & { sort?: UListSortField; user: string },
   ): Promise<ApiResponse<UserListEntry>> {
     const response = await this.http.post<ApiResponse<UserListEntry>>(
       "/ulist",
-      query
+      this.prepareQuery(query),
     );
     return response.data;
   }
@@ -493,7 +539,7 @@ export class VndbClient {
    */
   async updateUserListEntry(
     vnId: string,
-    data: UListUpdateData
+    data: UListUpdateData,
   ): Promise<void> {
     await this.http.patch(`/ulist/${vnId}`, data);
   }
@@ -515,7 +561,7 @@ export class VndbClient {
    */
   async updateUserReleaseEntry(
     releaseId: string,
-    data: RListUpdateData
+    data: RListUpdateData,
   ): Promise<void> {
     await this.http.patch(`/rlist/${releaseId}`, data);
   }
@@ -539,8 +585,8 @@ export class VndbClient {
    */
   async searchVisualNovels(
     title: string,
-    fields?: FieldSelection<VnField>,
-    limit: number = 25
+    fields?: FieldSelection<VisualNovel>,
+    limit: number = 25,
   ): Promise<VisualNovel[]> {
     const result = await this.getVisualNovels({
       filters: ["search", "=", title] as SimpleFilter,
@@ -557,7 +603,7 @@ export class VndbClient {
    * @returns Visual novels
    */ async getVisualNovelsByIds(
     ids: string[],
-    fields?: FieldSelection<VnField>
+    fields?: FieldSelection<VisualNovel>,
   ): Promise<VisualNovel[]> {
     if (ids.length === 0) return [];
 
@@ -582,6 +628,53 @@ export class VndbClient {
   }
 
   /**
+   * Get voice actors for a specific character in a visual novel
+   * @param characterId - Character ID
+   * @param vnid - Visual novel ID
+   * @returns List of voice actor names
+   **/
+  async getCharacterVoiceActors(
+    characterId: string,
+    vnid: string,
+  ): Promise<{ name: string; note: string | null }[]> {
+    const result = await this.getVisualNovel(
+      vnid,
+      "va{note,staff{name,id},character{id}}",
+    );
+
+    return (
+      result?.va
+        ?.filter((va) => va.character.id === characterId)
+        .map((va) => ({
+          name: va.staff.name,
+          note: va.note ?? null,
+        })) ?? []
+    );
+  }
+
+  /**
+   * Get all voice actors mapped with their characters in a VN
+   * @param vnid
+   * @returns List of voice actors with character id, name, and note
+   */
+  async getAllCharacterVoiceActors(
+    vnid: string,
+  ): Promise<{ character_id: string; name: string; note: string | null }[]> {
+    const res = await this.getVisualNovel(
+      vnid,
+      "va{character{id},staff{name,id},note}",
+    );
+
+    return (
+      res?.va?.map((va) => ({
+        character_id: va.character.id,
+        name: va.staff.name,
+        note: va.note ?? null,
+      })) ?? []
+    );
+  }
+
+  /**
    * Get all results from a paginated query
    * @param queryFn - Function that returns a query for a given page
    * @param maxPages - Maximum number of pages to fetch (safety limit)
@@ -591,7 +684,7 @@ export class VndbClient {
   async getAllResults<T>(
     queryFn: (page: number) => Promise<ApiResponse<T>>,
     maxPages: number = 100,
-    delayMs: number = 500
+    delayMs: number = 500,
   ): Promise<T[]> {
     const results: T[] = [];
     let page = 1;
