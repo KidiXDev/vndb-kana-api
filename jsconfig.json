@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": true,
+    "checkJs": false,
+    "baseUrl": ".",
+    "paths": {
+      "vndb-kana-api": ["./src/index.ts"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "examples/**/*",
+    "tests/**/*",
+    "index.d.ts",
+    "package.json"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

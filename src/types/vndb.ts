@@ -285,7 +285,7 @@ export interface Character {
   id: VndbId;
   name: string;
   original: string | null;
-  aliases: string[];
+  aliases: string[] | null;
   description: string | null;
   image: VndbImage | null;
   blood_type: BloodType | null;
@@ -300,7 +300,7 @@ export interface Character {
   sex: [Gender | null, Gender | null] | null;
   gender: [Gender | null, Gender | null] | null;
   vns: CharacterVn[];
-  traits: CharacterTrait[];
+  traits: CharacterTrait[] | null;
 }
 
 export interface CharacterVn extends VisualNovel {
@@ -366,8 +366,8 @@ export interface Quote {
   id: VndbId;
   quote: string;
   score: number;
-  vn: VisualNovel[] | null;
-  character: Character[] | null;
+  vn: VisualNovel | null;
+  character: Character | null;
 }
 
 // User list interfaces
@@ -420,9 +420,9 @@ export type OrFilter = ["or", ...Filter[]];
 export type Filter = SimpleFilter | AndFilter | OrFilter;
 
 // Query interface
-export interface ApiQuery {
+export interface ApiQuery<T = unknown> {
   filters?: Filter | Filter[] | string;
-  fields?: string;
+  fields?: FieldSelection<T>;
   sort?: string;
   reverse?: boolean;
   results?: number;
@@ -535,3 +535,90 @@ export interface UListUpdateData {
 export interface RListUpdateData {
   status?: 0 | 1 | 2 | 3 | 4;
 }
+
+// Field selection types for type-safe field picking per resource type.
+// Use these with selectFields() or as IntelliSense-guided strings.
+
+/** Valid top-level field names for Visual Novel queries */
+export type VnField = keyof VisualNovel;
+
+/** Valid top-level field names for Release queries */
+export type ReleaseField = keyof Release;
+
+/** Valid top-level field names for Character queries */
+export type CharacterField = keyof Character;
+
+/** Valid top-level field names for Producer queries */
+export type ProducerField = keyof Producer;
+
+/** Valid top-level field names for Staff queries */
+export type StaffField = keyof Staff;
+
+/** Valid top-level field names for Tag queries */
+export type TagField = keyof Tag;
+
+/** Valid top-level field names for Trait queries */
+export type TraitField = keyof Trait;
+
+/** Valid top-level field names for Quote queries */
+export type QuoteField = keyof Quote;
+
+/** Valid top-level field names for User List queries */
+export type UListField = keyof UserListEntry;
+
+/**
+ * A type that provides autocomplete for:
+ * 1. Top-level fields: "id", "title"
+ * 2. Nested fields via dot: "image.url"
+ * 3. Multiple fields via array: ["id", "title", "image.url"] (Recommended for best autocomplete)
+ */
+export type FieldSelection<TObj> =
+  | FieldPath<TObj>
+  | FieldPath<TObj>[]
+  | (string & {});
+
+/**
+ * Returns all valid field paths for a resource type T, including nested fields.
+ * e.g. "title" | "image.url" | "image.dims" | "tags.name"
+ * Recursive depth is limited to 3 levels to prevent circularity issues.
+ */
+export type FieldPath<
+  T,
+  Depth extends unknown[] = [],
+> = Depth["length"] extends 3
+  ? string
+  : T extends object
+    ? {
+        [K in keyof T & string]: T[K] extends object
+          ? K | `${K}.${FieldPath<Unwrap<T[K]>, [unknown, ...Depth]>}`
+          : K;
+      }[keyof T & string]
+    : string;
+
+/**
+ * Unwraps the element type of an array, or strips null/undefined from a plain type.
+ * Handles `T[]`, `T[] | null`, and `T | null` uniformly so that sub-field key
+ * extraction works correctly regardless of whether a resource field is an array,
+ * a nullable object, or a nullable array.
+ */
+export type Unwrap<T> =
+  NonNullable<T> extends Array<infer U> ? U : NonNullable<T>;
+
+/**
+ * Returns the valid sub-field key names for a given field `K` of resource type `TObj`.
+ * Handles array fields (e.g., `tags: VnTag[]`) and nullable object fields
+ * (e.g., `image: VndbImage | null`) automatically.
+ *
+ * Intended for use with {@link selectSubFields} to get type-safe sub-field selection.
+ *
+ * @example
+ * ```typescript
+ * // "id" | "url" | "dims" | "sexual" | "violence" | "votecount" | "thumbnail" | "thumbnail_dims"
+ * type ImageSubFields = SubFieldsOf<VisualNovel, "image">;
+ *
+ * // All keys of VnTag (id, name, rating, spoiler, lie, ...)
+ * type TagSubFields = SubFieldsOf<VisualNovel, "tags">;
+ * ```
+ */
+export type SubFieldsOf<TObj, K extends keyof TObj> = keyof Unwrap<TObj[K]> &
+  string;
