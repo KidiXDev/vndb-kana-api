@@ -1,6 +1,6 @@
 {
   "name": "vndb-kana-api",
-  "version": "0.3.0",
+  "version": "0.2.0",
   "description": "A complete TypeScript wrapper for the VNDB Kana API (v2)",
   "main": "dist/index.js",
   "module": "dist/index.js",
