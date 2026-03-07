@@ -1,7 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import type {
   VndbClientConfig,
-  VndbError,
   ApiQuery,
   ApiResponse,
   StatsResponse,
@@ -32,6 +31,14 @@ import type {
   SimpleFilter,
   AndFilter,
 } from "../types/index.js";
+import {
+  VndbApiError,
+  VndbRateLimitError,
+  VndbAuthenticationError,
+  VndbValidationError,
+  sleep,
+} from "./errors.js";
+import { RateLimiter, isValidVndbId, chunk } from "./utils.js";
 
 /**
  * VNDB Kana API Client
@@ -56,7 +63,8 @@ import type {
  */
 export class VndbClient {
   private readonly http: AxiosInstance;
-  private readonly config: Required<VndbClientConfig>;
+  private config: Required<VndbClientConfig>;
+  private rateLimiter: RateLimiter;
 
   /**
    * Create a new VNDB API client
@@ -74,6 +82,11 @@ export class VndbClient {
       },
     };
 
+    this.rateLimiter = new RateLimiter(
+      this.config.rateLimit.requests ?? 200,
+      this.config.rateLimit.window ?? 300000
+    );
+
     this.http = axios.create({
       baseURL: this.config.baseURL,
       timeout: this.config.timeout,
@@ -86,16 +99,28 @@ export class VndbClient {
       },
     });
 
+    // Add request interceptor to enforce rate limiting
+    this.http.interceptors.request.use(async (config) => {
+      if (!this.rateLimiter.canMakeRequest()) {
+        const waitMs = this.rateLimiter.getTimeUntilNextRequest();
+        await sleep(waitMs);
+      }
+      this.rateLimiter.recordRequest();
+      return config;
+    });
+
     // Add response interceptor for error handling
     this.http.interceptors.response.use(
       (response) => response,
       (error) => {
-        const vndbError: VndbError = new Error(
-          error.response?.data || error.message || "Unknown API error"
+        const status: number | undefined = error.response?.status;
+        if (status === 429) throw new VndbRateLimitError();
+        if (status === 401) throw new VndbAuthenticationError();
+        throw new VndbApiError(
+          error.response?.data?.message ?? error.message ?? "Unknown API error",
+          status,
+          error.response?.data
         );
-        vndbError.status = error.response?.status;
-        vndbError.response = error.response?.data;
-        throw vndbError;
       }
     );
   }
@@ -213,6 +238,9 @@ export class VndbClient {
     id: string,
     fields?: string
   ): Promise<VisualNovel | null> {
+    if (!isValidVndbId(id, "v")) {
+      throw new VndbValidationError(`Invalid visual novel ID: "${id}". Expected format: v<number> (e.g. v17)`);
+    }
     const result = await this.getVisualNovels({
       filters: ["id", "=", id] as SimpleFilter,
       fields,
@@ -242,6 +270,9 @@ export class VndbClient {
    * @returns Release data
    */
   async getRelease(id: string, fields?: string): Promise<Release | null> {
+    if (!isValidVndbId(id, "r")) {
+      throw new VndbValidationError(`Invalid release ID: "${id}". Expected format: r<number> (e.g. r123)`);
+    }
     const result = await this.getReleases({
       filters: ["id", "=", id] as SimpleFilter,
       fields,
@@ -271,6 +302,9 @@ export class VndbClient {
    * @returns Producer data
    */
   async getProducer(id: string, fields?: string): Promise<Producer | null> {
+    if (!isValidVndbId(id, "p")) {
+      throw new VndbValidationError(`Invalid producer ID: "${id}". Expected format: p<number> (e.g. p123)`);
+    }
     const result = await this.getProducers({
       filters: ["id", "=", id] as SimpleFilter,
       fields,
@@ -300,6 +334,9 @@ export class VndbClient {
    * @returns Character data
    */
   async getCharacter(id: string, fields?: string): Promise<Character | null> {
+    if (!isValidVndbId(id, "c")) {
+      throw new VndbValidationError(`Invalid character ID: "${id}". Expected format: c<number> (e.g. c456)`);
+    }
     const result = await this.getCharacters({
       filters: ["id", "=", id] as SimpleFilter,
       fields,
@@ -326,6 +363,9 @@ export class VndbClient {
    * @returns Staff data
    */
   async getStaffMember(id: string, fields?: string): Promise<Staff | null> {
+    if (!isValidVndbId(id, "s")) {
+      throw new VndbValidationError(`Invalid staff ID: "${id}". Expected format: s<number> (e.g. s123)`);
+    }
     const result = await this.getStaff({
       filters: ["and", ["ismain", "=", 1], ["id", "=", id]] as AndFilter,
       fields,
@@ -352,6 +392,9 @@ export class VndbClient {
    * @returns Tag data
    */
   async getTag(id: string, fields?: string): Promise<Tag | null> {
+    if (!isValidVndbId(id, "g")) {
+      throw new VndbValidationError(`Invalid tag ID: "${id}". Expected format: g<number> (e.g. g123)`);
+    }
     const result = await this.getTags({
       filters: ["id", "=", id] as SimpleFilter,
       fields,
@@ -378,6 +421,9 @@ export class VndbClient {
    * @returns Trait data
    */
   async getTrait(id: string, fields?: string): Promise<Trait | null> {
+    if (!isValidVndbId(id, "i")) {
+      throw new VndbValidationError(`Invalid trait ID: "${id}". Expected format: i<number> (e.g. i123)`);
+    }
     const result = await this.getTraits({
       filters: ["id", "=", id] as SimpleFilter,
       fields,
@@ -404,8 +450,9 @@ export class VndbClient {
    */
   async getRandomQuote(fields?: string): Promise<Quote | null> {
     const result = await this.getQuotes({
-      filters: ["random", "=", 1] as SimpleFilter,
+      sort: "id",
       fields: fields || "vn{id,title},character{id,name},quote",
+      results: 1,
     });
     return result.results[0] || null;
   }
@@ -503,34 +550,46 @@ export class VndbClient {
   ): Promise<VisualNovel[]> {
     if (ids.length === 0) return [];
 
-    const filter: Filter =
-      ids.length === 1
-        ? ["id", "=", ids[0]]
-        : ["or", ...ids.map((id) => ["id", "=", id] as SimpleFilter)];
+    const batches = chunk(ids, 100);
+    const results: VisualNovel[] = [];
 
-    const result = await this.getVisualNovels({
-      filters: filter,
-      fields,
-      results: Math.min(ids.length, 100),
-    });
-    return result.results;
+    for (const batch of batches) {
+      const batchFilter: Filter =
+        batch.length === 1
+          ? ["id", "=", batch[0]]
+          : ["or", ...batch.map((id) => ["id", "=", id] as SimpleFilter)];
+
+      const result = await this.getVisualNovels({
+        filters: batchFilter,
+        fields,
+        results: batch.length,
+      });
+      results.push(...result.results);
+    }
+
+    return results;
   }
 
   /**
    * Get all results from a paginated query
    * @param queryFn - Function that returns a query for a given page
    * @param maxPages - Maximum number of pages to fetch (safety limit)
+   * @param delayMs - Delay in milliseconds between page requests (default: 500ms)
    * @returns All results
    */
   async getAllResults<T>(
     queryFn: (page: number) => Promise<ApiResponse<T>>,
-    maxPages: number = 100
+    maxPages: number = 100,
+    delayMs: number = 500
   ): Promise<T[]> {
     const results: T[] = [];
     let page = 1;
     let hasMore = true;
 
     while (hasMore && page <= maxPages) {
+      if (page > 1 && delayMs > 0) {
+        await sleep(delayMs);
+      }
       const response = await queryFn(page);
       results.push(...response.results);
       hasMore = response.more;

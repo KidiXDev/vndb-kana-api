@@ -5,6 +5,7 @@ import type {
   OrFilter,
   FilterValue,
 } from "../types/index.js";
+import { VndbValidationError } from "./errors.js";
 
 /**
  * Utility functions for working with VNDB API filters
@@ -104,6 +105,11 @@ export function byPlatform(platforms: string | string[]): Filter {
  * @returns Date range filter
  */
 export function byDateRange(after?: string, before?: string): Filter {
+  if (!after && !before) {
+    throw new VndbValidationError(
+      "byDateRange requires at least one date bound (after or before)"
+    );
+  }
   const filters: Filter[] = [];
   if (after) {
     filters.push(filter("released", ">=", after));
@@ -235,4 +241,42 @@ export const fields = {
   // Tag/Trait fields
   tagBasic: "name,category,vn_count",
   traitBasic: "name,group_name,char_count",
+
+  // Nested presets for type-safe field selection
+  vn: {
+    basic: "id,title,released,rating,votecount",
+    full: "id,title,alttitle,released,rating,votecount,description,image{id,url},languages,platforms,tags{id,name,rating},developers{id,name}",
+  },
+  release: {
+    basic: "id,title,released,languages,platforms",
+    full: "id,title,released,languages,platforms,producers{id,name,developer,publisher},vns{id,title}",
+  },
+  character: {
+    basic: "id,name,original,gender",
+    full: "id,name,original,gender,image{id,url},description,traits{id,name},vns{id,title,role}",
+  },
+  producer: {
+    basic: "id,name,type,lang",
+    full: "id,name,original,aliases,lang,type,description",
+  },
+  staff: {
+    basic: "id,name,lang,gender",
+    full: "id,name,original,lang,gender,description,aliases{name,latin}",
+  },
+  tag: {
+    basic: "id,name,category,vn_count",
+    full: "id,name,aliases,description,category,vn_count,applicable,searchable",
+  },
+  trait: {
+    basic: "id,name,group_name,char_count",
+    full: "id,name,aliases,description,group_id,group_name,char_count,applicable,searchable",
+  },
+  quote: {
+    basic: "id,quote,vn{id,title}",
+    full: "id,quote,score,vn{id,title},character{id,name}",
+  },
+  ulist: {
+    basic: "id,added,vote,started,finished,notes",
+    full: "id,added,vote,started,finished,notes,labels{id,label},vn{id,title,released,rating}",
+  },
 };
