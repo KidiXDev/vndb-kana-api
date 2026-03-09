@@ -102,7 +102,6 @@ export class VndbClient {
       },
     });
 
-    // Add request interceptor to enforce rate limiting
     this.http.interceptors.request.use(async (axiosConfig) => {
       if (!this.rateLimiter.canMakeRequest()) {
         const waitMs = this.rateLimiter.getTimeUntilNextRequest();
@@ -112,7 +111,6 @@ export class VndbClient {
       return axiosConfig;
     });
 
-    // Add response interceptor for error handling
     this.http.interceptors.response.use(
       (response) => response,
       (error) => {
@@ -157,8 +155,6 @@ export class VndbClient {
     this.token = "";
     delete this.http.defaults.headers.Authorization;
   }
-
-  // Simple API endpoints
 
   /**
    * Get database statistics
@@ -636,7 +632,7 @@ export class VndbClient {
   async getCharacterVoiceActors(
     characterId: string,
     vnid: string,
-  ): Promise<{ name: string; note: string | null }[]> {
+  ): Promise<{ id: string; name: string; note: string | null }[]> {
     const result = await this.getVisualNovel(
       vnid,
       "va{note,staff{name,id},character{id}}",
@@ -646,6 +642,7 @@ export class VndbClient {
       result?.va
         ?.filter((va) => va.character.id === characterId)
         .map((va) => ({
+          id: va.staff.id,
           name: va.staff.name,
           note: va.note ?? null,
         })) ?? []
@@ -657,17 +654,25 @@ export class VndbClient {
    * @param vnid
    * @returns List of voice actors with character id, name, and note
    */
-  async getAllCharacterVoiceActors(
-    vnid: string,
-  ): Promise<{ character_id: string; name: string; note: string | null }[]> {
+  async getAllCharacterVoiceActors(vnid: string): Promise<
+    {
+      character_id: string;
+      character_name: string;
+      staff_id: string;
+      name: string;
+      note: string | null;
+    }[]
+  > {
     const res = await this.getVisualNovel(
       vnid,
-      "va{character{id},staff{name,id},note}",
+      "va{character{id,name},staff{name,id},note}",
     );
 
     return (
       res?.va?.map((va) => ({
         character_id: va.character.id,
+        character_name: va.character.name,
+        staff_id: va.staff.id,
         name: va.staff.name,
         note: va.note ?? null,
       })) ?? []

@@ -381,10 +381,7 @@ export interface UserListEntry {
   finished: string | null;
   notes: string | null;
   labels: UserLabel[];
-  vn: {
-    // All VN fields available
-    [key: string]: unknown;
-  };
+  vn: VisualNovel;
   releases: UserListRelease[];
 }
 
@@ -393,10 +390,8 @@ export interface UserLabel {
   label: string;
 }
 
-export interface UserListRelease {
+export interface UserListRelease extends Release {
   list_status: 0 | 1 | 2 | 3 | 4; // Unknown, Pending, Obtained, On loan, Deleted
-  // All release fields available
-  [key: string]: unknown;
 }
 
 export interface UserLabelInfo extends UserLabel {
@@ -536,8 +531,15 @@ export interface RListUpdateData {
   status?: 0 | 1 | 2 | 3 | 4;
 }
 
-// Field selection types for type-safe field picking per resource type.
-// Use these with selectFields() or as IntelliSense-guided strings.
+export enum DefaultLabelUlist {
+  "Playing" = 1,
+  "Finished" = 2,
+  "Stalled" = 3,
+  "Dropped" = 4,
+  "Wishlist" = 5,
+  "Blacklist" = 6,
+  "Voted" = 7,
+}
 
 /** Valid top-level field names for Visual Novel queries */
 export type VnField = keyof VisualNovel;

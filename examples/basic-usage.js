@@ -13,7 +13,7 @@ import {
 } from "vndb-kana-api";
 
 async function basicExamples() {
-  // Create a client (no authentication needed for read-only operations)
+  // Create a client
   const vndb = new VndbClient();
 
   console.log("=== Basic Examples ===\n");
@@ -70,7 +70,7 @@ async function basicExamples() {
   console.log();
 
   // 5. Get Character Voice Actor
-  console.log("5. Fetch Character VA:");
+  console.log(`5. Fetch Character (${char.name}) VA:`);
   const charVa = await vndb.getCharacterVoiceActors("c77134", "v24351");
   charVa.forEach((va) => {
     console.log(`VA: ${va.name}${va.note ? ` (${va.note})` : ""}`);
@@ -82,7 +82,7 @@ async function basicExamples() {
   const allCharVa = await vndb.getAllCharacterVoiceActors("v24351");
   allCharVa.slice(0, 5).forEach((va, index) => {
     console.log(
-      `${index + 1}. Character: ${va.character_id} -> VA: ${va.name}${
+      `${index + 1}. Character: ${va.character_name} (${va.character_id}) -> VA: ${va.name}${
         va.note ? ` (${va.note})` : ""
       }`,
     );
